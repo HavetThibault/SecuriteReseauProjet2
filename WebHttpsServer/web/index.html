@@ -1,16 +1,37 @@
 <!DOCTYPE html>
-<!--
-To change this license header, choose License Headers in Project Properties.
-To change this template file, choose Tools | Templates
-and open the template in the editor.
--->
-<html>
-    <head>
-        <title>TODO supply a title</title>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    </head>
-    <body>
-        <div>TODO write content</div>
-    </body>
-</html>
+
+<html> 
+<head> 
+    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/> 
+    <link rel="stylesheet" href="Css/Bootstrap5.0.2.css"/>
+    <title>Authentification</title> 
+</head> 
+<body class="text-center"> 
+    <div class="container-md col-3">
+        <div class="my-5"></div>
+        <img class="col-12" src="Pictures/SecurityCourseIcon.png" alt="Connexion"/>
+        <form class="m-2 border" method="GET" action="/WebHttpsServer/ServletControler">
+            <div class="container overflow-hidden">
+                <div class="m-2">
+                    <label class="form-label fs-5">Identifiant</label>
+                    <input type="text" size="20" class="form-control" name="nom"/>
+                </div>
+
+                <div class="m-2">
+                    <label class="form-label fs-5">Mot de passe</label>
+                    <input type="password" class="form-control" name="motdepasse" size="20"/>
+                </div>
+
+                <div class="m-2 row justify-content-around">
+                    <div class="col-6">
+                        <button type="submit" name="action" class="btn btn-secondary" value="Connexion">Connexion</button>
+                    </div>
+                    <div class="col-6">
+                        <button type="submit"  class="btn btn-secondary" name="action" value="Inscription">Inscription</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</body> 
+</html> 
