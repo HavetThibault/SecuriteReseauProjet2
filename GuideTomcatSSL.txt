@@ -1,0 +1,19 @@
+
+
+ ============= POUR APACHE TOMCAT 8.5 =============
+
+Créer un keystore du type JKS :
+
+keytool -genkey -alias nomCle -keyalg RSA -keysize 2048 -dname "CN=NomCreateur, O=HEPL, C=BE" -deststoretype jks -storepass changeit -keystore ServerKeystore.jks
+
+Ajouter le connector suivant au server.xml :
+
+<Connector
+           protocol="org.apache.coyote.http11.Http11AprProtocol"
+           port="9999" maxThreads="200"
+           keystoreType="JKS"
+           scheme="https" secure="true" SSLEnabled="true"
+           keystoreFile="D:\Programmation\MASI1\SecuriteReseaux\Labo\SSL\WebHttpsServer.jks" keystorePass="changeit"
+           clientAuth="false" sslProtocol="TLS" keyalias="cleRSA1"/>
+
+Et le tag 'keystoreFile' contient le chemin vers le keystore défini, et 'keyalias' contient l'alias de la clé à utiliser dans ce keystore
