@@ -63,12 +63,17 @@ public class ServletControler extends HttpServlet {
         clientDBManagerBean = new ClientDBManagerBean();
         try 
         {
-            clientDBManagerBean.initWithServiceName("localhost", "3306", "schema_BD_airport", "bd_airport", "mysql");
+            clientDBManagerBean.initWithServiceName("localhost", "3306", "projetsecu2dbclients", "root", "root");
         } 
-        catch (SQLException | ClassNotFoundException ex) 
+        catch (SQLException ex) 
         {
-            System.out.println("Erreur Connexion MySql\n");
-            exit(-1);
+            System.out.println("Erreur Connexion MySql : " + ex.getMessage() + " ** " + ex.getSQLState());
+            return;
+        }
+        catch(ClassNotFoundException ex)
+        {
+            System.out.println("Erreur Connexion MySql : " + ex.getMessage());
+            return;
         }
         clientDBManagerBean.run(); 
     }
@@ -82,25 +87,49 @@ public class ServletControler extends HttpServlet {
         HttpSession session = request.getSession(true);
         
         String action = request.getParameter("action");
+        String lastAction = (String)session.getAttribute("LastAction.Action");
+        if(lastAction == null)
+            lastAction = request.getScheme()+"://"+request.getServerName()+ ":"+request.getServerPort() + "/";
         
         if(action == null)
-            action = (String)session.getAttribute("LastAction.Action");
+            action = lastAction;
         
-        
-        switch(action){
-            case "Inscription":
-                break;
-            case "Connexion":
-                String name = request.getParameter("nom");
-                String pwd = request.getParameter("motdepasse");
-                // clientDBManagerBean
-                ServletUtils.redirect("/Web_Applic_Billets/JSPInit.jsp", request, response);
-                break;
-        }
+        try
+        {
+            switch(action){
+                case "Inscription":
+                    break;
 
-        //session.setAttribute("msgerror", "Erreur JDBC-OBDC : " + ex.getMessage() + " ** " + ex.getSQLState());
-        //ServletUtils.redirect("/Web_Applic_Billets/JSPError.jsp", request, response);
+                case "Connexion":
+                    String name = request.getParameter("nom");
+                    String pwd = request.getParameter("motdepasse");
+                    if(clientDBManagerBean.checkClientPassword(name, pwd))
+                        ServletUtils.redirectStoreURL("/WebHttpsServer/JSPInit.jsp", request, response, session);
+                    else
+                        ServletUtils.redirectStoreURL("/WebHttpsServer/JSPError.jsp", request, response, session);
+                    break;
+
+                case "DemandeInscription":
+                    break;
+
+                case "Deconnexion":
+                    break;
+                    
+                case "Paiement":
+                    break;
+                    
+                case "Retour":
+                    response.sendRedirect((String)session.getAttribute("LastAction.URL"));
+                    break;
+            }
+        }
+        catch(SQLException ex)
+        {
+            session.setAttribute("msgerror", "Erreur JDBC-OBDC : " + ex.getMessage() + " ** " + ex.getSQLState());
+            ServletUtils.redirect("/WebHttpsServer/JSPError.jsp", request, response);
+        }
         
+        out.close();
     }
     
     @Override

@@ -13,19 +13,18 @@ public class Client
 {
 
     /**
-     * @return the RegistreNational
+     * @return the Login
      */
-    public String getRegistreNational() {
-        return RegistreNational;
+    public String getLogin() {
+        return Login;
     }
 
     /**
-     * @param RegistreNational the RegistreNational to set
+     * @param Login the Login to set
      */
-    public void setRegistreNational(String RegistreNational) {
-        this.RegistreNational = RegistreNational;
+    public void setLogin(String Login) {
+        this.Login = Login;
     }
-
     /**
      * @return the Nom
      */
@@ -56,11 +55,11 @@ public class Client
     
     private String Nom;
     private String Prenom;
-    private String RegistreNational;
+    private String Login;
     
-    public Client(String registreNational, String nom, String prenom)
+    public Client(String login, String nom, String prenom)
     {
-        RegistreNational = registreNational;
+        Login = login;
         Nom = nom;
         Prenom = prenom;
     }

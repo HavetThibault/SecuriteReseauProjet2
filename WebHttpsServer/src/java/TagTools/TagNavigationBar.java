@@ -29,7 +29,7 @@ public class TagNavigationBar extends TagSupport {
     public int doStartTag() throws JspException 
     {
         JspWriter out = pageContext.getOut();
-        String servletControlerURL = "/Web_Applic_Billets/ServletControler";
+        String servletControlerURL = "/WebHttpsServer/ServletControler";
         try 
         {
             out.write(
@@ -37,7 +37,7 @@ public class TagNavigationBar extends TagSupport {
                 "    <div class=\"container\">\n" +
                 "       <div class=\"d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start\">\n" +
                 "           <a href=\"/\" class=\"d-flex align-items-center mb-2 mb-lg-0 text-dark text-decoration-none\">\n" +
-                "           <img class=\"bi me-2\" width=\"40\" height=\"32\" src=\"Pictures/IconeAvion.png\"/>\n" +
+                "           <img class=\"bi me-2\" width=\"80\" height=\"32\" src=\"Pictures/HeplIcon.png\"/>\n" +
                 "       </a>\n" +
 
                 "       <ul class=\"nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0\">\n" +

@@ -26,6 +26,7 @@ public class ServletUtils {
     
     public static void redirect(String url, HttpServletRequest request, HttpServletResponse response) throws IOException
     {
+        System.out.println("Redirecting the client to : " + request.getScheme()+"://"+request.getServerName()+ ":"+request.getServerPort() + url);
         response.sendRedirect (request.getScheme()+"://"+request.getServerName()+ ":"+request.getServerPort() + url);
     }
     

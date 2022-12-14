@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html> 
+<head> 
+    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+    <title>Formulaire d'inscription d'un client</title> 
+    <link rel="stylesheet" href="Css/Bootstrap5.0.2.css"/>
+</head> 
+<body> 
+    <div class="container-md">
+        <h3 class="m-2">Formulaire d'inscription</h3> 
+        <form class="m-2 border bg-light" method="GET" action="/WebHttpsServer/ServletControler">
+            <div class="container overflow-hidden">
+                <div class="m-2">
+                    <label class="form-label">Nom</label>
+                    <input type="text" size="20" class="form-control" name="nom"/>
+                </div>
+
+                <div class="m-2">
+                    <label class="form-label">Prénom</label>
+                    <input type="text" class="form-control" name="prenom" size="20"/>
+                </div>
+                
+                <div class="m-2">
+                    <label class="form-label">Registre national</label>
+                    <input type="text" class="form-control" name="registreNational" size="20"/>
+                </div>
+                
+                <div class="m-2">
+                    <label class="form-label">Login</label>
+                    <input type="text" class="form-control" name="login" size="20"/>
+                </div>
+                
+                <div class="m-2">
+                    <label class="form-label">Mot de passe</label>
+                    <input type="text" class="form-control" name="motDePasse" size="20"/>
+                </div>
+
+                <div class="m-2 row">
+                    <div class="col-auto">
+                        <button type="submit" name="action" class="btn btn-secondary" value="DemandeInscription">Inscription</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</body> 
+</html> 

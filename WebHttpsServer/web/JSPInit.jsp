@@ -20,9 +20,9 @@
 </head> 
 <body>
     <TagTools:TagNavigationBar/>
-    <div class="container-sm">
-        <form class="m-2 border bg-light" method="GET" action="/Web_Applic_Billets/ServletControler"> 
-            <button class="btn btn-secondary" type="submit" value="RechercheVol" name="action">Perdre de l'argent</button>
+    <div class="text-center">
+        <form class="m-2" method="GET" action="/Web_Applic_Billets/ServletControler"> 
+            <button class="btn btn-secondary" type="submit" value="Paiement" name="action">Perdre de l'argent</button>
         </form>
     </div>
 </body>
