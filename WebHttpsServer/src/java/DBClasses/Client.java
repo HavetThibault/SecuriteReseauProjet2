@@ -13,6 +13,20 @@ public class Client
 {
 
     /**
+     * @return the Password
+     */
+    public String getPassword() {
+        return Password;
+    }
+
+    /**
+     * @param Password the Password to set
+     */
+    public void setPassword(String Password) {
+        this.Password = Password;
+    }
+
+    /**
      * @return the Login
      */
     public String getLogin() {
@@ -28,39 +42,41 @@ public class Client
     /**
      * @return the Nom
      */
-    public String getNom() {
-        return Nom;
+    public String getName() {
+        return Name;
     }
 
     /**
-     * @param Nom the Nom to set
+     * @param Name the Nom to set
      */
-    public void setNom(String Nom) {
-        this.Nom = Nom;
+    public void setName(String Name) {
+        this.Name = Name;
     }
 
     /**
      * @return the Prenom
      */
-    public String getPrenom() {
-        return Prenom;
+    public String getFirstname() {
+        return Firstname;
     }
 
     /**
-     * @param Prenom the Prenom to set
+     * @param Firstname the Prenom to set
      */
-    public void setPrenom(String Prenom) {
-        this.Prenom = Prenom;
+    public void setFirstname(String Firstname) {
+        this.Firstname = Firstname;
     }
     
-    private String Nom;
-    private String Prenom;
+    private String Name;
+    private String Firstname;
     private String Login;
+    private String Password;
     
-    public Client(String login, String nom, String prenom)
+    public Client(String login, String password, String name, String firstname)
     {
         Login = login;
-        Nom = nom;
-        Prenom = prenom;
+        Name = name;
+        Firstname = firstname;
+        Password = password;
     }
 }

@@ -21,7 +21,7 @@
     <TagTools:TagNavigationBar/>
     <div class="container-sm bg-light">
         <h3 class="m-2">Error</h3>
-        <p class=" m-2"><%=(String)session.getAttribute("msgerror")%></p>
+        <p class=" m-2"><%=(String)session.getAttribute("errorMsg")%></p>
         <form method="GET" action="/WebHttpsServer/ServletControler"> 
             <button class="btn btn-secondary m-2" type="submit" value="Retour" name="action">Retour</button
         </form>

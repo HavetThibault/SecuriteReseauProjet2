@@ -22,7 +22,7 @@
     <TagTools:TagNavigationBar/>
     <div class="text-center">
         <form class="m-2" method="GET" action="/Web_Applic_Billets/ServletControler"> 
-            <button class="btn btn-secondary" type="submit" value="Paiement" name="action">Perdre de l'argent</button>
+            <button class="btn btn-secondary" type="submit" value="looseMoney" name="action">Loose money</button>
         </form>
     </div>
 </body>
