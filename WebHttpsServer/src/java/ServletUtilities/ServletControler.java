@@ -66,7 +66,7 @@ public class ServletControler extends HttpServlet {
         clientDBManagerBean = new ClientDBManagerBean();
         try 
         {
-            clientDBManagerBean.initWithServiceName("localhost", "3306", "projetsecu2dbclients", "root", "root");
+            clientDBManagerBean.initWithServiceName("localhost", "3306", "projetsecu2dbclients", "root", "oui123");
         } 
         catch (SQLException ex) 
         {
