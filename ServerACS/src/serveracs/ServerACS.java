@@ -59,7 +59,7 @@ public class ServerACS {
             OutputStreamWriter outputstreamwriter = new OutputStreamWriter(objectOutputStream);
             BufferedWriter bufferedwriter = new BufferedWriter(outputstreamwriter);
 
-            String message = "test";
+            String message = "Hi I am an HTTPS server looking for a transaction.";
             bufferedwriter.write(message + '\n');
             bufferedwriter.flush();
 

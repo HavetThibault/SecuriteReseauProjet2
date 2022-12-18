@@ -5,11 +5,17 @@ package ServletUtilities;
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 import DBClasses.Client;
 import DBClasses.ClientDBManagerBean;
 import GestionFichier.FichierProperties;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
@@ -35,69 +41,60 @@ import javax.servlet.http.HttpSession;
 public class ServletControler extends HttpServlet {
 
     private final static String codeProvider = "BC";
-    
+
     private ClientDBManagerBean clientDBManagerBean;
-    
+
     @Override
-    public void init (ServletConfig config) throws ServletException 
-    { 
+    public void init(ServletConfig config) throws ServletException {
         super.init(config);
-        
+
         // ---------------- PROPERTIES ------------------------
         FichierProperties prop;
-        try 
-        {
+        try {
             HashMap map = new HashMap();
 
             //map.put("IP_SERV_BILLET", "192.168.1.9");
-            
             prop = new FichierProperties("WebHttpsServer", "Serv.properties");
             prop.LoadOrInit(map);
-        } 
-        catch (IOException ex) {
+        } catch (IOException ex) {
             Logger.getLogger(ex.getClass().getName()).log(Level.SEVERE, null, ex);
-            return ;
+            return;
         }
-        
+
         // ----------------------- BEAN DBAirport ------------------------
         // portTicket = Integer.parseInt(prop.getProperty("PORT_TICKET"));
         // IpServBillet = prop.getProperty("IP_SERV_BILLET");
-        
         clientDBManagerBean = new ClientDBManagerBean();
-        try 
-        {
+        try {
             clientDBManagerBean.initWithServiceName("localhost", "3306", "projetsecu2dbclients", "root", "oui123");
-        } 
-        catch (SQLException ex) 
-        {
+        } catch (SQLException ex) {
             System.out.println("Erreur Connexion MySql : " + ex.getMessage() + " ** " + ex.getSQLState());
             return;
-        }
-        catch(ClassNotFoundException ex)
-        {
+        } catch (ClassNotFoundException ex) {
             System.out.println("Erreur Connexion MySql : " + ex.getMessage());
             return;
         }
-        clientDBManagerBean.run(); 
+        clientDBManagerBean.run();
     }
-    
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException 
-    {
-        response.setContentType("text/html;charset=UTF-8"); 
+            throws ServletException, IOException {
+        response.setContentType("text/html;charset=UTF-8");
         PrintWriter out = response.getWriter();
         HttpSession session = request.getSession(true);
-        
+
         String action = request.getParameter("action");
-        String lastAction = (String)session.getAttribute("LastAction.Action");
-        if(lastAction == null)
-            lastAction = request.getScheme()+"://"+request.getServerName()+ ":"+request.getServerPort() + "/WebHttpsServer";
-        
-        if(action == null)
+        String lastAction = (String) session.getAttribute("LastAction.Action");
+        if (lastAction == null) {
+            lastAction = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort() + "/WebHttpsServer";
+        }
+
+        if (action == null) {
             action = lastAction;
-        
-        switch(action){
+        }
+
+        switch (action) {
             case "Inscription":
                 ServletUtils.redirectStoreURL("/WebHttpsServer/Inscription.html", request, response, session);
                 break;
@@ -105,16 +102,14 @@ public class ServletControler extends HttpServlet {
             case "Connection":
                 String login = request.getParameter("login");
                 String pwd = request.getParameter("password");
-                try
-                {
-                    if(clientDBManagerBean.checkClientPassword(login, pwd)){
+                try {
+                    if (clientDBManagerBean.checkClientPassword(login, pwd)) {
                         session.setAttribute("login", login);
                         ServletUtils.redirectStoreURL("/WebHttpsServer/JSPInit.jsp", request, response, session);
-                    }
-                    else
+                    } else {
                         sendErrorMsg("Wrong login or password.", request, response, session);
-                }
-                catch(SQLException ex){
+                    }
+                } catch (SQLException ex) {
                     sendErrorMsg("Erreur JDBC : " + ex.getMessage() + " ** " + ex.getSQLState(), request, response, session);
                 } catch (NoSuchAlgorithmException | NoSuchProviderException ex) {
                     Logger.getLogger(ServletControler.class.getName()).log(Level.SEVERE, null, ex);
@@ -127,29 +122,46 @@ public class ServletControler extends HttpServlet {
                 login = (String) request.getParameter("login");
                 String password = (String) request.getParameter("password");
                 session.setAttribute("login", login);
-                try
-                {
-                    if(clientDBManagerBean.insertClient(new Client(login, password, name, firstname)))
+                try {
+                    if (clientDBManagerBean.insertClient(new Client(login, password, name, firstname))) {
                         ServletUtils.redirectStoreURL("/WebHttpsServer/JSPInit.jsp", request, response, session);
-                    else
+                    } else {
                         sendErrorMsg("Login already taken.", request, response, session);
-                }
-                catch(SQLException ex){
+                    }
+                } catch (SQLException ex) {
                     sendErrorMsg("Erreur JDBC : " + ex.getMessage() + " ** " + ex.getSQLState(), request, response, session);
-                } 
-                catch (NoSuchAlgorithmException | NoSuchProviderException ex) {
+                } catch (NoSuchAlgorithmException | NoSuchProviderException ex) {
                     Logger.getLogger(ServletControler.class.getName()).log(Level.SEVERE, null, ex);
                 }
                 break;
-                
+
             case "looseMoney":
-                System.setProperty("javax.net.ssl.trustStore","mySrvKeystore");
-                System.setProperty("javax.net.ssl.trustStorePassword","123456");
+                System.out.println("j'initie la connexion.");
+                System.setProperty("javax.net.ssl.trustStore", "D:\\SSLCertificates\\TrustStore.jks");
+                System.setProperty("javax.net.ssl.trustStorePassword", "changeit");
 
                 SSLSocketFactory sslsocketfactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
                 SSLSocket sslsocket = (SSLSocket) sslsocketfactory.createSocket("localhost", 9999);
-                
-                // TODO
+
+                OutputStream outputstream = sslsocket.getOutputStream();
+                ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputstream);
+                OutputStreamWriter outputstreamwriter = new OutputStreamWriter(objectOutputStream);
+                BufferedWriter bufferedwriter = new BufferedWriter(outputstreamwriter);
+
+                String message = "Hi I am an HTTPS server looking for a transaction.";
+                bufferedwriter.write(message + '\n');
+                bufferedwriter.flush();
+
+                InputStream inputstream = sslsocket.getInputStream();
+                InputStreamReader inputstreamreader = new InputStreamReader(inputstream);
+                BufferedReader bufferedreader = new BufferedReader(inputstreamreader);
+
+                System.out.println(bufferedreader.readLine());
+
+                bufferedwriter.close();
+                bufferedreader.close();
+                sslsocket.close();
+                break;
                 
             case "Deconnexion":
                 ServletUtils.removeAllAttributes(session);
@@ -159,26 +171,26 @@ public class ServletControler extends HttpServlet {
             case "Retour":
                 response.sendRedirect(lastAction);
                 break;
+                
+            default:
+                break;
+                
         }
-        
+
         out.close();
     }
-    
+
     @Override
-    public void destroy()
-    {
+    public void destroy() {
         clientDBManagerBean.stop();
-        try 
-        {
+        try {
             clientDBManagerBean.close();
-        } 
-        catch (SQLException ex) {
+        } catch (SQLException ex) {
             Logger.getLogger(ServletControler.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    
-    public void sendErrorMsg(String errorMsg, HttpServletRequest request, HttpServletResponse response, HttpSession session) throws IOException
-    {
+
+    public void sendErrorMsg(String errorMsg, HttpServletRequest request, HttpServletResponse response, HttpSession session) throws IOException {
         session.setAttribute("errorMsg", errorMsg);
         ServletUtils.redirect("/WebHttpsServer/JSPError.jsp", request, response);
     }
