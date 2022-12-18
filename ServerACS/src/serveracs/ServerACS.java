@@ -6,14 +6,12 @@
 package serveracs;
 
 import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
 import java.io.*;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.Security;
-import javax.net.ssl.SSLContext;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLServerSocketFactory;
 
 /**
  *
@@ -25,62 +23,72 @@ public class ServerACS {
      * @param args the command line arguments
      */
     public static void main(String[] args) throws NoSuchAlgorithmException, KeyManagementException, NoSuchProviderException {
-//        Security.addProvider(new BouncyCastleProvider());
         try {
-            System.setProperty("javax.net.ssl.trustStore", "D:\\SSLCertificates\\TrustStore.jks");
-            System.setProperty("javax.net.ssl.trustStorePassword", "changeit");
+            System.setProperty("javax.net.ssl.keyStore", "D:\\SSLCertificates\\ServerKeystore.jks");
+            System.setProperty("javax.net.ssl.keyStorePassword", "changeit");
 
-            // Create an SSL context and set it as the default for all SSL connections
-//            SSLContext sslContext = SSLContext.getInstance("TLS");
-//            sslContext.init(null, null, null);
-//            SSLContext.setDefault(sslContext);
-            SSLSocketFactory sslsocketfactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
-            SSLSocket sslsocket = (SSLSocket) sslsocketfactory.createSocket("localhost", 9999);
+            SSLServerSocketFactory sslserversocketfactory
+                    = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
+            SSLServerSocket sslserversocket
+                    = (SSLServerSocket) sslserversocketfactory.createServerSocket(6666);
 
-            // Set the list of enabled cipher suites for the socket
-//            String[] cipherSuites = {"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384", "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384", "TLS_RSA_WITH_AES_256_GCM_SHA384"};
-//            sslsocket.setEnabledCipherSuites(cipherSuites);
-            // Send a message to the server
-//            PrintWriter out = new PrintWriter(new OutputStreamWriter(sslsocket.getOutputStream()));
-//            out.println("Hello from the client!");
-//            out.flush();
-//
-//            // Receive a message from the server
-//            BufferedReader in = new BufferedReader(new InputStreamReader(sslsocket.getInputStream()));
-//            String message = in.readLine();
-//            System.out.println("Received message: " + message);
-//
-//            // Close the socket and the streams
-//            sslsocket.close();
-//            out.close();
-//            in.close();
-            OutputStream outputstream = sslsocket.getOutputStream();
-            ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputstream);
-            OutputStreamWriter outputstreamwriter = new OutputStreamWriter(objectOutputStream);
-            BufferedWriter bufferedwriter = new BufferedWriter(outputstreamwriter);
+            System.out.println("Waiting for clients to send notifications. \n");
 
-            String message = "Hi I am an HTTPS server looking for a transaction.";
-            bufferedwriter.write(message + '\n');
-            bufferedwriter.flush();
+            while (true) {
+                SSLSocket sslsocket = (SSLSocket) sslserversocket.accept();
 
-            InputStream inputstream = sslsocket.getInputStream();
-            InputStreamReader inputstreamreader = new InputStreamReader(inputstream);
-            BufferedReader bufferedreader = new BufferedReader(inputstreamreader);
+                InputStream inputstream = sslsocket.getInputStream();
+                BufferedReader bufferedReaderForACQ = new BufferedReader(new InputStreamReader(inputstream));
 
-            System.out.println(bufferedreader.readLine());
-//            String string = null;
-//            while ((string = bufferedreader.readLine()) != null) {
-//                if(bufferedreader.readLine().length() == 0) break;
-//                bufferedwriter.write(string + '\n');
-//                bufferedwriter.flush();
-//            }
+                OutputStream outputstream = sslsocket.getOutputStream();
+                BufferedWriter bufferedWriterForACQ = new BufferedWriter(new OutputStreamWriter(outputstream));
 
-            bufferedwriter.close();
-            bufferedreader.close();
-            sslsocket.close();
+                String httpsClientData;
+                while ((httpsClientData = bufferedReaderForACQ.readLine()) != null) {
+
+                    System.out.println("Received message: " + httpsClientData);
+                    System.out.println("Sending a response to client... \n");
+                    bufferedWriterForACQ.write("I got your message, thank you! \n");
+                    bufferedWriterForACQ.flush();
+                }
+
+                bufferedWriterForACQ.close();
+                bufferedReaderForACQ.close();
+                sslsocket.close();
+            }
+
         } catch (IOException exception) {
             exception.printStackTrace();
         }
+//        try {
+//            System.setProperty("javax.net.ssl.trustStore", "D:\\SSLCertificates\\TrustStore.jks");
+//            System.setProperty("javax.net.ssl.trustStorePassword", "changeit");
+//
+//            SSLSocketFactory sslsocketfactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+//            SSLSocket sslsocket = (SSLSocket) sslsocketfactory.createSocket("localhost", 9999);
+//
+//            OutputStream outputstream = sslsocket.getOutputStream();
+//            ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputstream);
+//            OutputStreamWriter outputstreamwriter = new OutputStreamWriter(objectOutputStream);
+//            BufferedWriter bufferedwriter = new BufferedWriter(outputstreamwriter);
+//
+//            String message = "Hi I am a simple client looking for attention.";
+//            bufferedwriter.write(message + '\n');
+//            bufferedwriter.flush();
+//
+//            InputStream inputstream = sslsocket.getInputStream();
+//            InputStreamReader inputstreamreader = new InputStreamReader(inputstream);
+//            BufferedReader bufferedreader = new BufferedReader(inputstreamreader);
+//
+//            System.out.println(bufferedreader.readLine());
+//
+//            bufferedwriter.close();
+//            bufferedreader.close();
+//            sslsocket.close();
+//        } 
+//        catch (IOException exception) {
+//            exception.printStackTrace();
+//        }
     }
 
 }

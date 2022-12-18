@@ -135,8 +135,7 @@ public class ServletControler extends HttpServlet {
                 }
                 break;
 
-            case "looseMoney":
-                System.out.println("j'initie la connexion.");
+            case "loseMoney":
                 System.setProperty("javax.net.ssl.trustStore", "D:\\SSLCertificates\\TrustStore.jks");
                 System.setProperty("javax.net.ssl.trustStorePassword", "changeit");
 
@@ -144,23 +143,21 @@ public class ServletControler extends HttpServlet {
                 SSLSocket sslsocket = (SSLSocket) sslsocketfactory.createSocket("localhost", 9999);
 
                 OutputStream outputstream = sslsocket.getOutputStream();
-                ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputstream);
-                OutputStreamWriter outputstreamwriter = new OutputStreamWriter(objectOutputStream);
-                BufferedWriter bufferedwriter = new BufferedWriter(outputstreamwriter);
+                BufferedWriter bufferedwriter = new BufferedWriter(new OutputStreamWriter(outputstream));
 
                 String message = "Hi I am an HTTPS server looking for a transaction.";
                 bufferedwriter.write(message + '\n');
                 bufferedwriter.flush();
 
                 InputStream inputstream = sslsocket.getInputStream();
-                InputStreamReader inputstreamreader = new InputStreamReader(inputstream);
-                BufferedReader bufferedreader = new BufferedReader(inputstreamreader);
+                BufferedReader bufferedreader = new BufferedReader(new InputStreamReader(inputstream));
 
                 System.out.println(bufferedreader.readLine());
 
                 bufferedwriter.close();
                 bufferedreader.close();
                 sslsocket.close();
+                ServletUtils.redirectStoreURL("/WebHttpsServer/JSPInit.jsp", request, response, session);
                 break;
                 
             case "Deconnexion":
