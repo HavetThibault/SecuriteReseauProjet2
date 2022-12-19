@@ -78,6 +78,68 @@ public class ServletControler extends HttpServlet {
     }
 
     @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        response.setContentType("text/html;charset=UTF-8");
+        PrintWriter out = response.getWriter();
+        HttpSession session = request.getSession(true);
+
+        String action = request.getParameter("action");
+        String lastAction = (String) session.getAttribute("LastAction.Action");
+        if (lastAction == null) {
+            lastAction = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort() + "/WebHttpsServer";
+        }
+
+        if (action == null) {
+            action = lastAction;
+        }
+        switch (action) {
+
+            case "Connection":
+                String login = request.getParameter("login");
+                String pwd = request.getParameter("password");
+                try {
+                    if (clientDBManagerBean.checkClientPassword(login, pwd)) {
+                        session.setAttribute("login", login);
+                        ServletUtils.redirectStoreURL("/WebHttpsServer/JSPInit.jsp", request, response, session);
+                    } else {
+                        sendErrorMsg("Wrong login or password.", request, response, session);
+                    }
+                } catch (SQLException ex) {
+                    sendErrorMsg("Erreur JDBC : " + ex.getMessage() + " ** " + ex.getSQLState(), request, response, session);
+                } catch (NoSuchAlgorithmException | NoSuchProviderException ex) {
+                    Logger.getLogger(ServletControler.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                break;
+
+            case "Inscription":
+                ServletUtils.redirectStoreURL("/WebHttpsServer/Inscription.html", request, response, session);
+                break;
+
+            case "InscriptionRequest":
+                String name = (String) request.getParameter("name");
+                String firstname = (String) request.getParameter("firstname");
+                login = (String) request.getParameter("login");
+                String password = (String) request.getParameter("password");
+                session.setAttribute("login", login);
+                try {
+                    if (clientDBManagerBean.insertClient(new Client(login, password, name, firstname))) {
+                        ServletUtils.redirectStoreURL("/WebHttpsServer/JSPInit.jsp", request, response, session);
+                    } else {
+                        sendErrorMsg("Login already taken.", request, response, session);
+                    }
+                } catch (SQLException ex) {
+                    sendErrorMsg("Erreur JDBC : " + ex.getMessage() + " ** " + ex.getSQLState(), request, response, session);
+                } catch (NoSuchAlgorithmException | NoSuchProviderException ex) {
+                    Logger.getLogger(ServletControler.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
@@ -159,7 +221,7 @@ public class ServletControler extends HttpServlet {
                 sslsocket.close();
                 ServletUtils.redirectStoreURL("/WebHttpsServer/JSPInit.jsp", request, response, session);
                 break;
-                
+
             case "Deconnexion":
                 ServletUtils.removeAllAttributes(session);
                 ServletUtils.redirectStoreURL("/WebHttpsServer", request, response, session);
@@ -168,10 +230,10 @@ public class ServletControler extends HttpServlet {
             case "Retour":
                 response.sendRedirect(lastAction);
                 break;
-                
+
             default:
                 break;
-                
+
         }
 
         out.close();

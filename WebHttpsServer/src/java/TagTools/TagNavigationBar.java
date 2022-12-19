@@ -41,7 +41,7 @@ public class TagNavigationBar extends TagSupport {
                 "       </a>\n" +
 
                 "       <ul class=\"nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0\">\n" +
-                "           <li><p class=\"d-flex align-items-center mb-2 mb-lg-0 text-dark text-decoration-none\">EZ SecuRéseaux</p></li>" +        
+                "           <li><p class=\"d-flex align-items-center mb-2 mb-lg-0 text-dark text-decoration-none\">Secu Projet 2</p></li>" +        
                 "       </ul>\n" +
 
                 "       <div class=\"text-end\">" +  
