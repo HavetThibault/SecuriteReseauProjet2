@@ -3,7 +3,7 @@ DROP table clients;
 create table Clients
 (
 	Login varchar(30),
-    Name varchar(30),
+    Name varchar(30),authcodeauthcodeauthcodeauthcode
     Firstname varchar(30),
     PasswordDate bigint,
     PasswordRandomNumber double,

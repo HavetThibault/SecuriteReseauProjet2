@@ -10,6 +10,7 @@ import java.io.*;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.util.Random;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 
@@ -24,71 +25,158 @@ public class ServerACS {
      */
     public static void main(String[] args) throws NoSuchAlgorithmException, KeyManagementException, NoSuchProviderException {
         try {
-            System.setProperty("javax.net.ssl.keyStore", "D:\\SSLCertificates\\ServerKeystore.jks");
+            System.setProperty("javax.net.ssl.keyStore", "D:\\SSLCertificates\\Projet3DSecure\\AuthServerKeystore.jks");
             System.setProperty("javax.net.ssl.keyStorePassword", "changeit");
 
             SSLServerSocketFactory sslserversocketfactory
                     = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
-            SSLServerSocket sslserversocket
+            SSLServerSocket sslserversocketForPortAuth
                     = (SSLServerSocket) sslserversocketfactory.createServerSocket(6666);
+            SSLServerSocket sslserversocketForPortMoney
+                    = (SSLServerSocket) sslserversocketfactory.createServerSocket(3333);
 
             System.out.println("Waiting for clients to send notifications. \n");
+            
+            new Thread(() -> {
+                try {
+                    DoActionsOnAuthPort(sslserversocketForPortAuth);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }).start();
 
+            new Thread(() -> {
+                try {
+                    DoActionsOnMoneyPort(sslserversocketForPortMoney);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }).start();
+
+        } catch (IOException exception) {
+            exception.printStackTrace();
+        }
+    }
+
+    private static boolean IsCorrectBankAccount(String message) {
+        String bankAccount = message.substring(message.length() - 16, message.length());
+//        System.out.println(bankAccount);
+        if ("BE".equals(bankAccount.substring(0, 2))) {
+            if (IsDigitOnly(bankAccount.substring(2))) {
+                //System.out.println("Bank account correct");
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean IsCorrectAuthCode(String authCode) {
+        return true;
+    }
+
+    private static boolean IsDigitOnly(String s) {
+        for (int i = 0; i < s.length(); i++) {
+            if (!Character.isDigit(s.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static String GenerateAuthCode() {
+        int length = 6;
+        StringBuilder sb = new StringBuilder();
+        Random random = new Random();
+        for (int i = 0; i < length; i++) {
+            sb.append(random.nextInt(10));
+        }
+        String codeAuth = sb.toString();
+//        System.out.println(codeAuth);
+        return codeAuth;
+    }
+
+    private static BufferedWriter GetBufferedWriter(SSLSocket sslsocket) throws IOException {
+        OutputStream outputstream = sslsocket.getOutputStream();
+        BufferedWriter bufferedwriter = new BufferedWriter(new OutputStreamWriter(outputstream));
+        return bufferedwriter;
+    }
+
+    private static BufferedReader GetBufferedReader(SSLSocket sslsocket) throws IOException {
+        InputStream inputstream = sslsocket.getInputStream();
+        BufferedReader bufferedreader = new BufferedReader(new InputStreamReader(inputstream));
+        return bufferedreader;
+    }
+
+    private static void DoActionsOnAuthPort(SSLServerSocket sslserversocketForPortAuth) throws IOException {
+        try {
             while (true) {
-                SSLSocket sslsocket = (SSLSocket) sslserversocket.accept();
+                SSLSocket sslsocketForPortAuth = (SSLSocket) sslserversocketForPortAuth.accept();
 
-                InputStream inputstream = sslsocket.getInputStream();
-                BufferedReader bufferedReaderForACQ = new BufferedReader(new InputStreamReader(inputstream));
-
-                OutputStream outputstream = sslsocket.getOutputStream();
-                BufferedWriter bufferedWriterForACQ = new BufferedWriter(new OutputStreamWriter(outputstream));
+                BufferedReader bufferedReaderForPortAuth = GetBufferedReader(sslsocketForPortAuth);
+                BufferedWriter bufferedWriterForPortAuth = GetBufferedWriter(sslsocketForPortAuth);
 
                 String httpsClientData;
-                while ((httpsClientData = bufferedReaderForACQ.readLine()) != null) {
-
+                while ((httpsClientData = bufferedReaderForPortAuth.readLine()) != null) {
                     System.out.println("Received message: " + httpsClientData);
                     System.out.println("Sending a response to client... \n");
-                    bufferedWriterForACQ.write("I got your message, thank you! \n");
-                    bufferedWriterForACQ.flush();
+
+                    if (httpsClientData.contains("BANK ACCOUNT")) {
+                        if (IsCorrectBankAccount(httpsClientData)) {
+                            String authCode = GenerateAuthCode();
+                            bufferedWriterForPortAuth.write("Your bank account number is correct, here is your authentication code : " + authCode + "\n");
+                            bufferedWriterForPortAuth.flush();
+                        }
+                    } else {
+                        bufferedWriterForPortAuth.write("I don't understand your request! \n");
+                        bufferedWriterForPortAuth.flush();
+                    }
                 }
 
-                bufferedWriterForACQ.close();
-                bufferedReaderForACQ.close();
-                sslsocket.close();
+                bufferedWriterForPortAuth.close();
+                bufferedReaderForPortAuth.close();
+                sslsocketForPortAuth.close();
+
             }
 
         } catch (IOException exception) {
             exception.printStackTrace();
         }
-//        try {
-//            System.setProperty("javax.net.ssl.trustStore", "D:\\SSLCertificates\\TrustStore.jks");
-//            System.setProperty("javax.net.ssl.trustStorePassword", "changeit");
-//
-//            SSLSocketFactory sslsocketfactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
-//            SSLSocket sslsocket = (SSLSocket) sslsocketfactory.createSocket("localhost", 9999);
-//
-//            OutputStream outputstream = sslsocket.getOutputStream();
-//            ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputstream);
-//            OutputStreamWriter outputstreamwriter = new OutputStreamWriter(objectOutputStream);
-//            BufferedWriter bufferedwriter = new BufferedWriter(outputstreamwriter);
-//
-//            String message = "Hi I am a simple client looking for attention.";
-//            bufferedwriter.write(message + '\n');
-//            bufferedwriter.flush();
-//
-//            InputStream inputstream = sslsocket.getInputStream();
-//            InputStreamReader inputstreamreader = new InputStreamReader(inputstream);
-//            BufferedReader bufferedreader = new BufferedReader(inputstreamreader);
-//
-//            System.out.println(bufferedreader.readLine());
-//
-//            bufferedwriter.close();
-//            bufferedreader.close();
-//            sslsocket.close();
-//        } 
-//        catch (IOException exception) {
-//            exception.printStackTrace();
-//        }
+    }
+
+    private static void DoActionsOnMoneyPort(SSLServerSocket sslserversocketForPortMoney) throws IOException {
+        try {
+            while (true) {
+                SSLSocket sslsocketForPortMoney = (SSLSocket) sslserversocketForPortMoney.accept();
+
+                BufferedReader bufferedReaderForPortMoney = GetBufferedReader(sslsocketForPortMoney);
+                BufferedWriter bufferedWriterForPortMoney = GetBufferedWriter(sslsocketForPortMoney);
+                String httpsClientData;
+                while ((httpsClientData = bufferedReaderForPortMoney.readLine()) != null) {
+                    System.out.println("Received message: " + httpsClientData);
+                    System.out.println("Sending a response to client... \n");
+
+                    if (httpsClientData.contains("is it a correct one")) {
+                        if (IsCorrectAuthCode(httpsClientData)) {
+                            bufferedWriterForPortMoney.write("ACK : Correct Authentication Code. \n");
+                            bufferedWriterForPortMoney.flush();
+                        } else {
+                            bufferedWriterForPortMoney.write("NACK : Incorrect Authentication Code. \n");
+                            bufferedWriterForPortMoney.flush();
+                        }
+                    } else {
+                        bufferedWriterForPortMoney.write("I don't understand your request \n");
+                        bufferedWriterForPortMoney.flush();
+                    }
+                }
+                bufferedWriterForPortMoney.close();
+                bufferedReaderForPortMoney.close();
+                sslsocketForPortMoney.close();
+
+            }
+
+        } catch (IOException exception) {
+            exception.printStackTrace();
+        }
     }
 
 }

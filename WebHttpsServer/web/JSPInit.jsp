@@ -15,12 +15,15 @@
     <body>
         <TagTools:TagNavigationBar/>
         <div class="text-center">
-            <form class="m-2" method="GET" action="ServletControler"> 
+            <form class="m-2" method="POST" action="ServletControler"> 
+                <label for="name">Authentication code (6 characters):</label> <br />
+
+                <input type="text" id="inputCode" name="inputCode" size="10"> <br />
                 <button class="btn btn-secondary" type="submit" value="loseMoney" name="action">Lose some money</button>
             </form>
-<!--            <div class="col-6">
-                <button type="submit"  class="btn btn-secondary" name="action" value="looseMoney">Loose some money</button>
-            </div>-->
+            <!--            <div class="col-6">
+                            <button type="submit"  class="btn btn-secondary" name="action" value="looseMoney">Loose some money</button>
+                        </div>-->
         </div>
     </body>
 </html>

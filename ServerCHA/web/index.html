@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+    <head>
+        <title>Cardholder Application</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body class="text-center"> 
+        <div class="container-md col-3">
+            <div class="my-5"></div>
+            <form class="m-2 border" method="GET" action="/ServerCHA/ServletControler">
+                <div class="col-6">
+                    <button type="submit" name="action" class="btn btn-secondary" value="SendBankData">Send bank data</button>
+                </div>
+                <div class="col-6">
+                    <button type="submit" name="action" class="btn btn-secondary" value="SendBankData">Send wrong bank data</button>
+                </div>
+            </form>
+            <label id="msgLabel">Je n'ai pas encore reçu de code d'authentification</label>
+        </div>
+
+        <script>
+            function updateLabel(newText) {
+                document.getElementById("msgLabel").innerHTML = newText;
+            }
+            ;
+
+            const params = new URLSearchParams(window.location.search);
+            const authCode = params.get('ac');
+            if (authCode.length > 0) {
+                updateLabel(authCode);
+            }
+        </script>
+    </body> 
+
+
+</html>

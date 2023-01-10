@@ -111,6 +111,28 @@ public class ServletControler extends HttpServlet {
                 }
                 break;
 
+            case "loseMoney":
+                SSLSocket sslsocket = GetFreshlyOpenedSSLSocket();
+                BufferedWriter bufferedwriter = GetBufferedWriter(sslsocket);
+                
+                //NOTE A SECURISER POUR LES INJECTIONS ETC
+                String authCodeValue = request.getParameter("inputCode");
+                System.out.println(authCodeValue);
+
+                String message = "Here's the authentication code sent by the https server: " + authCodeValue;
+                bufferedwriter.write(message + '\n');
+                bufferedwriter.flush();
+                
+                BufferedReader bufferedreader = GetBufferedReader(sslsocket);
+
+                System.out.println(bufferedreader.readLine());
+
+                bufferedwriter.close();
+                bufferedreader.close();
+                sslsocket.close();
+                ServletUtils.redirectStoreURL("/WebHttpsServer/JSPInit.jsp", request, response, session);
+                break;
+
             case "Inscription":
                 ServletUtils.redirectStoreURL("/WebHttpsServer/Inscription.html", request, response, session);
                 break;
@@ -197,31 +219,6 @@ public class ServletControler extends HttpServlet {
                 }
                 break;
 
-            case "loseMoney":
-                System.setProperty("javax.net.ssl.trustStore", "D:\\SSLCertificates\\TrustStore.jks");
-                System.setProperty("javax.net.ssl.trustStorePassword", "changeit");
-
-                SSLSocketFactory sslsocketfactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
-                SSLSocket sslsocket = (SSLSocket) sslsocketfactory.createSocket("localhost", 9999);
-
-                OutputStream outputstream = sslsocket.getOutputStream();
-                BufferedWriter bufferedwriter = new BufferedWriter(new OutputStreamWriter(outputstream));
-
-                String message = "Hi I am an HTTPS server looking for a transaction.";
-                bufferedwriter.write(message + '\n');
-                bufferedwriter.flush();
-
-                InputStream inputstream = sslsocket.getInputStream();
-                BufferedReader bufferedreader = new BufferedReader(new InputStreamReader(inputstream));
-
-                System.out.println(bufferedreader.readLine());
-
-                bufferedwriter.close();
-                bufferedreader.close();
-                sslsocket.close();
-                ServletUtils.redirectStoreURL("/WebHttpsServer/JSPInit.jsp", request, response, session);
-                break;
-
             case "Deconnexion":
                 ServletUtils.removeAllAttributes(session);
                 ServletUtils.redirectStoreURL("/WebHttpsServer", request, response, session);
@@ -252,5 +249,27 @@ public class ServletControler extends HttpServlet {
     public void sendErrorMsg(String errorMsg, HttpServletRequest request, HttpServletResponse response, HttpSession session) throws IOException {
         session.setAttribute("errorMsg", errorMsg);
         ServletUtils.redirect("/WebHttpsServer/JSPError.jsp", request, response);
+    }
+
+    private SSLSocket GetFreshlyOpenedSSLSocket() throws IOException {
+        System.setProperty("javax.net.ssl.trustStore", "D:\\SSLCertificates\\Projet3DSecure\\HTTPSTrustStore.jks");
+        System.setProperty("javax.net.ssl.trustStorePassword", "changeit");
+
+        SSLSocketFactory sslsocketfactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+        SSLSocket sslsocket = (SSLSocket) sslsocketfactory.createSocket("localhost", 9999);
+
+        return sslsocket;
+    }
+
+    private BufferedWriter GetBufferedWriter(SSLSocket sslsocket) throws IOException {
+        OutputStream outputstream = sslsocket.getOutputStream();
+        BufferedWriter bufferedwriter = new BufferedWriter(new OutputStreamWriter(outputstream));
+        return bufferedwriter;
+    }
+
+    private BufferedReader GetBufferedReader(SSLSocket sslsocket) throws IOException {
+        InputStream inputstream = sslsocket.getInputStream();
+        BufferedReader bufferedreader = new BufferedReader(new InputStreamReader(inputstream));
+        return bufferedreader;
     }
 }
