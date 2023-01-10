@@ -83,7 +83,7 @@ public class ServletControler extends HttpServlet {
                 DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
                 LocalDateTime now = LocalDateTime.now();
 
-                SSLSocket sslsocket = GetFreshlyOpenedSSLSocket();
+                SSLSocket sslsocket = getSSLSocketWithACSAuthPort();
                 BufferedWriter bufferedwriter = GetBufferedWriter(sslsocket);
 
                 String message = "I'm sending my bank information : DATE : " + dtf.format(now) + ". BANK ACCOUNT : BE66123412341234";
@@ -124,7 +124,7 @@ public class ServletControler extends HttpServlet {
         return s.substring(s.length() - 6);
     }
 
-    private SSLSocket GetFreshlyOpenedSSLSocket() throws IOException {
+    private SSLSocket getSSLSocketWithACSAuthPort() throws IOException {
 
         System.setProperty("javax.net.ssl.trustStore", "D:\\SSLCertificates\\Projet3DSecure\\CHATrustStore.jks");
         System.setProperty("javax.net.ssl.trustStorePassword", "changeit");
