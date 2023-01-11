@@ -5,12 +5,25 @@
  */
 package CHAMessages;
 
+import GenericMessages.Answer;
+import java.io.Serializable;
+
 /**
  *
  * @author Thibault
  */
-public class AuthenticationCodeAnswer {
+public class AuthenticationCodeAnswer extends Answer implements Serializable {
 
+    static public byte[] getObjectBytes(String cardNumber)
+    {
+        return cardNumber.getBytes();
+    }
+    
+    public byte[] getObjectBytes()
+    {
+        return AuthenticationCodeAnswer.getObjectBytes(authenticationCode);
+    }
+    
     /**
      * @return the authenticationCode
      */
@@ -44,6 +57,7 @@ public class AuthenticationCodeAnswer {
     
     public AuthenticationCodeAnswer(String authenticationCode, byte[] signature)
     {
+        super(true, "");
         this.authenticationCode = authenticationCode;
         this.signature = signature;
     }

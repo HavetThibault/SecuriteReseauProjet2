@@ -5,13 +5,17 @@
  */
 package chaapplication;
 
+import CHAMessages.AuthenticationCodeAnswer;
 import CHAMessages.AuthenticationCodeRequest;
+import GenericMessages.Answer;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.security.InvalidKeyException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -130,27 +134,42 @@ public class FrameAuthenticationCode extends javax.swing.JFrame {
             SSLSocket acsSocket = createSSLSocketToACSServer();
             
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(acsSocket.getOutputStream());
+            ObjectInputStream objectInputStream = new ObjectInputStream(acsSocket.getInputStream());
             objectOutputStream.writeObject(request);
             
-            
+            Answer acsAnswer = (Answer) objectInputStream.readObject();
+            if(acsAnswer.isSuccess())
+            {
+                AuthenticationCodeAnswer acsAnswerCode = (AuthenticationCodeAnswer) acsAnswer;
+                
+                Signature rsaSignature = Signature.getInstance("SHA1withRSA", CODE_PROVIDER);  
+                rsaSignature.initVerify(rsaACSPublicKey);
+                rsaSignature.update(acsAnswerCode.getObjectBytes());
+                
+                if(rsaSignature.verify(acsAnswerCode.getSignature()))
+                    LabelCode.setText(acsAnswerCode.getAuthenticationCode());
+                else
+                    LabelCode.setText("Bad signature from ACS.");
+            }
+            else
+            {
+                LabelCode.setText(acsAnswer.getMessage());
+            }
             
             acsSocket.close();
         } 
-        catch (NoSuchAlgorithmException | NoSuchProviderException | IOException | SignatureException ex) {
+        catch (NoSuchAlgorithmException | NoSuchProviderException | IOException | SignatureException | InvalidKeyException | ClassNotFoundException ex) {
             Logger.getLogger(FrameAuthenticationCode.class.getName()).log(Level.SEVERE, null, ex);
         }
     }//GEN-LAST:event_ObtenirCodeButtonActionPerformed
 
-    private AuthenticationCodeRequest createAuthenticationCodeRequest(String cardNumber) throws NoSuchAlgorithmException, NoSuchProviderException, SignatureException, IOException
+    private AuthenticationCodeRequest createAuthenticationCodeRequest(String cardNumber) throws NoSuchAlgorithmException, NoSuchProviderException, SignatureException, IOException, InvalidKeyException
     {
         Date today = new Date();
         Signature rsaSignature = Signature.getInstance("SHA1withRSA", CODE_PROVIDER);
-        rsaSignature.update(cardNumber.getBytes());
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DataOutputStream dataOutputStream = new DataOutputStream(baos);
-        dataOutputStream.writeLong(today.getTime());
-        rsaSignature.update(baos.toByteArray());
+        rsaSignature.initSign(rsaPrivateKey);
+        
+        rsaSignature.update(AuthenticationCodeRequest.getObjectBytes(cardNumber, today));
         
         return new AuthenticationCodeRequest(cardNumber, today, rsaSignature.sign());
     }

@@ -5,19 +5,29 @@
  */
 package serveracs;
 
+import CHAMessages.AuthenticationCodeAnswer;
 import CHAMessages.AuthenticationCodeRequest;
+import GenericMessages.Answer;
 import javax.net.ssl.SSLSocket;
 import java.io.*;
-import java.security.KeyManagementException;
+import java.security.InvalidKeyException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
 import java.security.Security;
 import java.security.Signature;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
+import java.security.PublicKey;
+import java.security.SecureRandom;
+import java.security.SignatureException;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 /**
@@ -27,14 +37,17 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 public class ServerACS {
 
     static private String CODE_PROVIDER = "BC";
-    
+
     /**
      * @param args the command line arguments
      */
-    public static void main(String[] args) throws NoSuchAlgorithmException, KeyManagementException, NoSuchProviderException {
+    public static void main(String[] args) {
         try {
-            System.setProperty("javax.net.ssl.keyStore", "D:\\SSLCertificates\\Projet3DSecure\\AuthServerKeystore.jks");
+            System.setProperty("javax.net.ssl.keyStore", "D:\\SSLCertificates\\RealProjet3DSecure\\ACSKeystore.jks");
             System.setProperty("javax.net.ssl.keyStorePassword", "changeit");
+            
+            System.setProperty("javax.net.ssl.trustStore", "D:\\SSLCertificates\\RealProjet3DSecure\\ACSKeystore.jks");
+            System.setProperty("javax.net.ssl.trustStorePassword", "changeit");
             
             Security.addProvider(new BouncyCastleProvider());
 
@@ -48,11 +61,7 @@ public class ServerACS {
             System.out.println("Waiting for clients to send notifications. \n");
             
             new Thread(() -> {
-                try {
-                    DoActionsOnAuthPort(sslserversocketForPortAuth);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                DoActionsOnAuthPort(sslserversocketForPortAuth);
             }).start();
 
             new Thread(() -> {
@@ -117,22 +126,48 @@ public class ServerACS {
 
     private static void DoActionsOnAuthPort(SSLServerSocket sslserversocketForPortAuth) {
         try {
+            KeyStore ks = KeyStore.getInstance("JKS");
+            try(FileInputStream keyStoreInputStream = new FileInputStream("D:\\SSLCertificates\\RealProjet3DSecure\\ACSKeystore.jks")){
+                ks.load(keyStoreInputStream,"changeit".toCharArray());
+            } 
+            
+            PrivateKey rsaPrivateKey = (PrivateKey) ks.getKey("rsaKey1", "changeit".toCharArray());
+            PublicKey rsaClientCHAPublicKey = ks.getCertificate("certClientCHA").getPublicKey();
+            
+            Signature rsaSignature = Signature.getInstance("SHA1withRSA", CODE_PROVIDER);
+            
             while (true) {
                 SSLSocket sslsocketForPortAuth = (SSLSocket) sslserversocketForPortAuth.accept();
                 try
                 {
                     ObjectInputStream chaInputStream = new ObjectInputStream(sslsocketForPortAuth.getInputStream());
-                    AuthenticationCodeRequest chaRequest = (AuthenticationCodeRequest)chaInputStream.readObject();
-                    if(IsCorrectBankAccount(chaRequest.getCardNumber()))
+                    ObjectOutputStream chaOutputStream = new ObjectOutputStream(sslsocketForPortAuth.getOutputStream());
+                    AuthenticationCodeRequest chaClientRequest = (AuthenticationCodeRequest)chaInputStream.readObject();
+                    if(IsCorrectBankAccount(chaClientRequest.getCardNumber()))
                     {
                         try {
-                            Signature rsaSignature = Signature.getInstance("SHA1withRSA", CODE_PROVIDER);  
-                            rsaSignature.
+                            rsaSignature.initVerify(rsaClientCHAPublicKey);
+                            rsaSignature.update(chaClientRequest.getObjectBytes());
+                            
+                            if(rsaSignature.verify(chaClientRequest.getSignature()))
+                            {
+                                String authenticationCode = generateAuthenticationCode();
+                                rsaSignature.initSign(rsaPrivateKey);
+                                rsaSignature.update(AuthenticationCodeAnswer.getObjectBytes(authenticationCode));
+                                byte[] signature = rsaSignature.sign();
+                                chaOutputStream.writeObject(new AuthenticationCodeAnswer(authenticationCode,signature));
+                                
+                                // Conserver le code
+                            }
+                            else
+                                chaOutputStream.writeObject(new Answer(false, "Bad signature from ClientCHA."));
                         } 
-                        catch (NoSuchAlgorithmException | NoSuchProviderException ex) {
+                        catch (InvalidKeyException | SignatureException ex) {
                             Logger.getLogger(ServerACS.class.getName()).log(Level.SEVERE, null, ex);
                         }
                     }
+                    else
+                        chaOutputStream.writeObject(new Answer(false, "Bad card number."));
                 }
                 catch (IOException | ClassNotFoundException ex){
                     Logger.getLogger(ServerACS.class.getName()).log(Level.SEVERE, null, ex);
@@ -140,9 +175,23 @@ public class ServerACS {
                 sslsocketForPortAuth.close();
             }
         } 
-        catch (IOException exception) {
+        catch (IOException | KeyStoreException | NoSuchAlgorithmException | CertificateException | UnrecoverableKeyException | NoSuchProviderException exception) {
             Logger.getLogger(ServerACS.class.getName()).log(Level.SEVERE, null, exception);
         }
+    }
+    
+    private static String generateAuthenticationCode() throws NoSuchAlgorithmException
+    {
+        SecureRandom secureRandom = SecureRandom.getInstance("SHA1PRNG");
+        StringBuilder strBuilder = new StringBuilder();
+        for(int i = 0; i < 7; i++)
+            strBuilder.append(String.valueOf(secureRandom.nextInt(10)));
+        return strBuilder.toString();
+    }
+    
+    private static void addAuthenticationCode(String cardNumber, String authenticationCode)
+    {
+        
     }
 
     private static void DoActionsOnMoneyPort(SSLServerSocket sslserversocketForPortMoney) throws IOException {

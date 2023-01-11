@@ -34,9 +34,10 @@ public class ServerACQ {
      */
     public static void main(String[] args) throws NoSuchAlgorithmException, KeyManagementException, NoSuchProviderException {
         try {
-            System.setProperty("javax.net.ssl.keyStore", "D:\\SSLCertificates\\Projet3DSecure\\AuthServerKeystore.jks");
+            System.setProperty("javax.net.ssl.keyStore", "D:\\SSLCertificates\\RealProjet3DSecure\\ACQKeystore.jks");
             System.setProperty("javax.net.ssl.keyStorePassword", "changeit");
-            System.setProperty("javax.net.ssl.trustStore", "D:\\SSLCertificates\\Projet3DSecure\\ACQTrustStore.jks");
+            
+            System.setProperty("javax.net.ssl.trustStore", "D:\\SSLCertificates\\RealProjet3DSecure\\ACQKeystore.jks");
             System.setProperty("javax.net.ssl.trustStorePassword", "changeit");
 
             SSLServerSocketFactory sslserversocketfactory
