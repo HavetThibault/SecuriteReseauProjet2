@@ -10,5 +10,41 @@ package CHAMessages;
  * @author Thibault
  */
 public class AuthenticationCodeAnswer {
-    private String authentication;
+
+    /**
+     * @return the authenticationCode
+     */
+    public String getAuthenticationCode() {
+        return authenticationCode;
+    }
+
+    /**
+     * @param authenticationCode the authenticationCode to set
+     */
+    public void setAuthenticationCode(String authenticationCode) {
+        this.authenticationCode = authenticationCode;
+    }
+
+    /**
+     * @return the signature
+     */
+    public byte[] getSignature() {
+        return signature;
+    }
+
+    /**
+     * @param signature the signature to set
+     */
+    public void setSignature(byte[] signature) {
+        this.signature = signature;
+    }
+    
+    private String authenticationCode;
+    private byte[] signature;
+    
+    public AuthenticationCodeAnswer(String authenticationCode, byte[] signature)
+    {
+        this.authenticationCode = authenticationCode;
+        this.signature = signature;
+    }
 }

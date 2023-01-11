@@ -8,13 +8,21 @@ package chaapplication;
 import CHAMessages.AuthenticationCodeRequest;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.Security;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -30,14 +38,23 @@ public class FrameAuthenticationCode extends javax.swing.JFrame {
 
     static private String CODE_PROVIDER = "BC";
     
+    private PrivateKey rsaPrivateKey;
+    private PublicKey rsaACSPublicKey;
     /**
      * Creates new form FrameAuthenticationCode
      */
-    public FrameAuthenticationCode() {
+    public FrameAuthenticationCode() throws FileNotFoundException, IOException, KeyStoreException, NoSuchAlgorithmException, CertificateException, NoSuchProviderException, UnrecoverableKeyException {
         initComponents();
-        System.setProperty("javax.net.ssl.trustStore", "D:\\SSLCertificates\\Projet3DSecure\\CHATrustStore.jks");
+        System.setProperty("javax.net.ssl.trustStore", "D:\\SSLCertificates\\RealProjet3DSecure\\ClientCHAKeystore.jks");
         System.setProperty("javax.net.ssl.trustStorePassword", "changeit");
         Security.addProvider(new BouncyCastleProvider());
+        
+        KeyStore ks = KeyStore.getInstance("JKS");
+        try(FileInputStream keyStoreInputStream = new FileInputStream("D:\\SSLCertificates\\RealProjet3DSecure\\ClientCHAKeystore.jks")){
+            ks.load(keyStoreInputStream,"changeit".toCharArray());
+        }
+        rsaPrivateKey = (PrivateKey) ks.getKey("rsaKey1", "changeit".toCharArray());
+        rsaACSPublicKey = ks.getCertificate("certACS").getPublicKey();
     }
 
     /**
@@ -142,41 +159,6 @@ public class FrameAuthenticationCode extends javax.swing.JFrame {
     {
         SSLSocketFactory sslsocketfactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
         return (SSLSocket) sslsocketfactory.createSocket("localhost", 6666);
-    }
-    
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(FrameAuthenticationCode.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(FrameAuthenticationCode.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(FrameAuthenticationCode.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(FrameAuthenticationCode.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        //</editor-fold>
-
-        /* Create and display the form */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                new FrameAuthenticationCode().setVisible(true);
-            }
-        });
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

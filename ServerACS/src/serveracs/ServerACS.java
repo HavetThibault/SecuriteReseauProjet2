@@ -5,14 +5,20 @@
  */
 package serveracs;
 
+import CHAMessages.AuthenticationCodeRequest;
 import javax.net.ssl.SSLSocket;
 import java.io.*;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.Security;
+import java.security.Signature;
 import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 /**
  *
@@ -20,6 +26,8 @@ import javax.net.ssl.SSLServerSocketFactory;
  */
 public class ServerACS {
 
+    static private String CODE_PROVIDER = "BC";
+    
     /**
      * @param args the command line arguments
      */
@@ -27,6 +35,8 @@ public class ServerACS {
         try {
             System.setProperty("javax.net.ssl.keyStore", "D:\\SSLCertificates\\Projet3DSecure\\AuthServerKeystore.jks");
             System.setProperty("javax.net.ssl.keyStorePassword", "changeit");
+            
+            Security.addProvider(new BouncyCastleProvider());
 
             SSLServerSocketFactory sslserversocketfactory
                     = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
@@ -58,9 +68,7 @@ public class ServerACS {
         }
     }
 
-    private static boolean IsCorrectBankAccount(String message) {
-        String bankAccount = message.substring(message.length() - 16, message.length());
-//        System.out.println(bankAccount);
+    private static boolean IsCorrectBankAccount(String bankAccount) {
         if ("BE".equals(bankAccount.substring(0, 2))) {
             if (IsDigitOnly(bankAccount.substring(2))) {
                 //System.out.println("Bank account correct");
@@ -107,39 +115,33 @@ public class ServerACS {
         return bufferedreader;
     }
 
-    private static void DoActionsOnAuthPort(SSLServerSocket sslserversocketForPortAuth) throws IOException {
+    private static void DoActionsOnAuthPort(SSLServerSocket sslserversocketForPortAuth) {
         try {
             while (true) {
                 SSLSocket sslsocketForPortAuth = (SSLSocket) sslserversocketForPortAuth.accept();
-
-                BufferedReader bufferedReaderForPortAuth = GetBufferedReader(sslsocketForPortAuth);
-                BufferedWriter bufferedWriterForPortAuth = GetBufferedWriter(sslsocketForPortAuth);
-
-                String httpsClientData;
-                while ((httpsClientData = bufferedReaderForPortAuth.readLine()) != null) {
-                    System.out.println("Received message: " + httpsClientData);
-                    System.out.println("Sending a response to client... \n");
-
-                    if (httpsClientData.contains("BANK ACCOUNT")) {
-                        if (IsCorrectBankAccount(httpsClientData)) {
-                            String authCode = GenerateAuthCode();
-                            bufferedWriterForPortAuth.write("Your bank account number is correct, here is your authentication code : " + authCode + "\n");
-                            bufferedWriterForPortAuth.flush();
+                try
+                {
+                    ObjectInputStream chaInputStream = new ObjectInputStream(sslsocketForPortAuth.getInputStream());
+                    AuthenticationCodeRequest chaRequest = (AuthenticationCodeRequest)chaInputStream.readObject();
+                    if(IsCorrectBankAccount(chaRequest.getCardNumber()))
+                    {
+                        try {
+                            Signature rsaSignature = Signature.getInstance("SHA1withRSA", CODE_PROVIDER);  
+                            rsaSignature.
+                        } 
+                        catch (NoSuchAlgorithmException | NoSuchProviderException ex) {
+                            Logger.getLogger(ServerACS.class.getName()).log(Level.SEVERE, null, ex);
                         }
-                    } else {
-                        bufferedWriterForPortAuth.write("I don't understand your request! \n");
-                        bufferedWriterForPortAuth.flush();
                     }
                 }
-
-                bufferedWriterForPortAuth.close();
-                bufferedReaderForPortAuth.close();
+                catch (IOException | ClassNotFoundException ex){
+                    Logger.getLogger(ServerACS.class.getName()).log(Level.SEVERE, null, ex);
+                }
                 sslsocketForPortAuth.close();
-
             }
-
-        } catch (IOException exception) {
-            exception.printStackTrace();
+        } 
+        catch (IOException exception) {
+            Logger.getLogger(ServerACS.class.getName()).log(Level.SEVERE, null, exception);
         }
     }
 
