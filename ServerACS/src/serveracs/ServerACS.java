@@ -28,6 +28,9 @@ import javax.net.ssl.SSLServerSocketFactory;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.SignatureException;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Map;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 /**
@@ -37,7 +40,6 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 public class ServerACS {
 
     static private String CODE_PROVIDER = "BC";
-
     /**
      * @param args the command line arguments
      */
@@ -65,11 +67,7 @@ public class ServerACS {
             }).start();
 
             new Thread(() -> {
-                try {
-                    DoActionsOnMoneyPort(sslserversocketForPortMoney);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                DoActionsOnMoneyPort(sslserversocketForPortMoney);
             }).start();
 
         } catch (IOException exception) {
@@ -143,33 +141,36 @@ public class ServerACS {
                     ObjectInputStream chaInputStream = new ObjectInputStream(sslsocketForPortAuth.getInputStream());
                     ObjectOutputStream chaOutputStream = new ObjectOutputStream(sslsocketForPortAuth.getOutputStream());
                     AuthenticationCodeRequest chaClientRequest = (AuthenticationCodeRequest)chaInputStream.readObject();
+                    System.out.println("Réception d'un client.");
+                    System.out.println("Vérification de ses données bancaires...");
                     if(IsCorrectBankAccount(chaClientRequest.getCardNumber()))
                     {
-                        try {
-                            rsaSignature.initVerify(rsaClientCHAPublicKey);
-                            rsaSignature.update(chaClientRequest.getObjectBytes());
-                            
-                            if(rsaSignature.verify(chaClientRequest.getSignature()))
-                            {
-                                String authenticationCode = generateAuthenticationCode();
-                                rsaSignature.initSign(rsaPrivateKey);
-                                rsaSignature.update(AuthenticationCodeAnswer.getObjectBytes(authenticationCode));
-                                byte[] signature = rsaSignature.sign();
-                                chaOutputStream.writeObject(new AuthenticationCodeAnswer(authenticationCode,signature));
-                                
-                                // Conserver le code
-                            }
-                            else
-                                chaOutputStream.writeObject(new Answer(false, "Bad signature from ClientCHA."));
-                        } 
-                        catch (InvalidKeyException | SignatureException ex) {
-                            Logger.getLogger(ServerACS.class.getName()).log(Level.SEVERE, null, ex);
+                        System.out.println("Données bancaire correctes.");
+                        System.out.println("Vérification de la signature.");
+                        rsaSignature.initVerify(rsaClientCHAPublicKey);
+                        rsaSignature.update(chaClientRequest.getObjectBytes());
+
+                        if(rsaSignature.verify(chaClientRequest.getSignature()))
+                        {
+                            System.out.println("Signature correcte.");
+                            System.out.println("Génération d'un code d'authentification...");
+                            String authenticationCode = generateAuthenticationCode();
+                            rsaSignature.initSign(rsaPrivateKey);
+                            rsaSignature.update(AuthenticationCodeAnswer.getObjectBytes(authenticationCode));
+                            byte[] signature = rsaSignature.sign();
+                            System.out.println("Envoi du code d'authentification '" + authenticationCode + "' au clientCHA.");
+                            chaOutputStream.writeObject(new AuthenticationCodeAnswer(authenticationCode,signature));
+
+                            System.out.println("Sauvegarde du code d'authentification.");
+                            addAuthenticationCode(authenticationCode);
                         }
+                        else
+                            chaOutputStream.writeObject(new Answer(false, "Bad signature from ClientCHA."));
                     }
                     else
                         chaOutputStream.writeObject(new Answer(false, "Bad card number."));
                 }
-                catch (IOException | ClassNotFoundException ex){
+                catch (IOException | ClassNotFoundException |InvalidKeyException | SignatureException ex){
                     Logger.getLogger(ServerACS.class.getName()).log(Level.SEVERE, null, ex);
                 }
                 sslsocketForPortAuth.close();
@@ -189,45 +190,49 @@ public class ServerACS {
         return strBuilder.toString();
     }
     
-    private static void addAuthenticationCode(String cardNumber, String authenticationCode)
+    private static synchronized void addAuthenticationCode(String authenticationCode)
     {
-        
+        authenticationCodeList.add(authenticationCode);
     }
+    
+    private static synchronized boolean checkAuthenticationCode(String authenticationCode)
+    {
+        for(int i = 0; i < authenticationCodeList.size(); i++)
+            if(((String)authenticationCodeList.get(i)).equals(authenticationCode))
+            {
+                authenticationCodeList.remove(i);
+                return true;
+            }
+        return false;
+    }
+    
+    private static ArrayList authenticationCodeList = new ArrayList();
 
-    private static void DoActionsOnMoneyPort(SSLServerSocket sslserversocketForPortMoney) throws IOException {
-        try {
+    private static void DoActionsOnMoneyPort(SSLServerSocket sslserversocketForPortMoney) {
+        try
+        {
             while (true) {
                 SSLSocket sslsocketForPortMoney = (SSLSocket) sslserversocketForPortMoney.accept();
-
+                
                 BufferedReader bufferedReaderForPortMoney = GetBufferedReader(sslsocketForPortMoney);
                 BufferedWriter bufferedWriterForPortMoney = GetBufferedWriter(sslsocketForPortMoney);
-                String httpsClientData;
-                while ((httpsClientData = bufferedReaderForPortMoney.readLine()) != null) {
-                    System.out.println("Received message: " + httpsClientData);
-                    System.out.println("Sending a response to client... \n");
+                String authenticationCode;
+                if ((authenticationCode = bufferedReaderForPortMoney.readLine()) != null) {
+                    System.out.println("Received authentication code: " + authenticationCode);
+                    System.out.println("Sending a response to client...");
 
-                    if (httpsClientData.contains("is it a correct one")) {
-                        if (IsCorrectAuthCode(httpsClientData)) {
-                            bufferedWriterForPortMoney.write("ACK : Correct Authentication Code. \n");
-                            bufferedWriterForPortMoney.flush();
-                        } else {
-                            bufferedWriterForPortMoney.write("NACK : Incorrect Authentication Code. \n");
-                            bufferedWriterForPortMoney.flush();
-                        }
-                    } else {
-                        bufferedWriterForPortMoney.write("I don't understand your request \n");
-                        bufferedWriterForPortMoney.flush();
-                    }
+                    if(checkAuthenticationCode(authenticationCode))
+                        bufferedWriterForPortMoney.write("ACK");
+                    else
+                        bufferedWriterForPortMoney.write("NACK");
+                    bufferedWriterForPortMoney.newLine();
                 }
                 bufferedWriterForPortMoney.close();
                 bufferedReaderForPortMoney.close();
                 sslsocketForPortMoney.close();
-
             }
-
-        } catch (IOException exception) {
-            exception.printStackTrace();
+        } catch (IOException ex) {
+            Logger.getLogger(ServerACS.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-
 }

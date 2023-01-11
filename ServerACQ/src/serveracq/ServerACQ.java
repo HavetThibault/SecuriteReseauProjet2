@@ -43,7 +43,7 @@ public class ServerACQ {
             SSLServerSocketFactory sslserversocketfactory
                     = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
             SSLServerSocket sslserversocketForHttpsCommunication
-                    = (SSLServerSocket) sslserversocketfactory.createServerSocket(9999);
+                    = (SSLServerSocket) sslserversocketfactory.createServerSocket(7777);
 
             System.out.println("Waiting for an authentication code from HTTPS server. \n");
 
@@ -52,10 +52,6 @@ public class ServerACQ {
         } catch (IOException exception) {
             exception.printStackTrace();
         }
-    }
-
-    private static String RetrieveAuthFromString(String s) {
-        return s.substring(s.length() - 6);
     }
 
     private static BufferedWriter GetBufferedWriter(SSLSocket sslsocket) throws IOException {
@@ -79,18 +75,15 @@ public class ServerACQ {
                 BufferedReader bufferedReaderForHttps = GetBufferedReader(sslSocketForHttps);
                 BufferedWriter bufferedWriterForHttps = GetBufferedWriter(sslSocketForHttps);
 
-                String httpsClientData;
-                while ((httpsClientData = bufferedReaderForHttps.readLine()) != null) {
-                    System.out.println("Received message: " + httpsClientData);
-                    SendMessageOnHTTPSCommunicationPort("Message received, analyzing the authentication code... \n", bufferedWriterForHttps);
+                String httpsAuthenticationCode;
+                if((httpsAuthenticationCode = bufferedReaderForHttps.readLine()) != null) 
+                {
+                    System.out.println("Received authentication code: " + httpsAuthenticationCode);
                     System.out.println("Sending the information to ACS server, and waiting for its answer...");
-                    String ACSResponse = AskACSOnMoneyPort(httpsClientData);
-                    if (ACSResponse.contains("NACK") || ACSResponse.contains("FAILED")) {
-                        SendMessageOnHTTPSCommunicationPort("Authentication refused. \n", bufferedWriterForHttps);
-                    } else {
-//                        SendMessageOnHTTPSCommunicationPort("Authentication accepted. \n", bufferedWriterForHttps);
-                    }
-
+                    String ACSResponse = AskACSOnMoneyPort(httpsAuthenticationCode);
+                    System.out.println("Forwarding to HttpsServer...");
+                    bufferedWriterForHttps.write(ACSResponse);
+                    bufferedWriterForHttps.newLine();
                 }
 
                 bufferedWriterForHttps.close();
@@ -102,12 +95,7 @@ public class ServerACQ {
         }
     }
 
-    private static void SendMessageOnHTTPSCommunicationPort(String message, BufferedWriter bufferedWriterForHttps) throws IOException {
-        bufferedWriterForHttps.write(message);
-        bufferedWriterForHttps.flush();
-    }
-
-    private static String AskACSOnMoneyPort(String httpsClientData) throws IOException {
+    private static String AskACSOnMoneyPort(String httpsAuthenticationCode) throws IOException {
         try {
             
             SSLSocketFactory sslsocketfactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
@@ -117,9 +105,9 @@ public class ServerACQ {
             BufferedReader bufferedReaderForACS = GetBufferedReader(sslSocketForACS);
             BufferedWriter bufferedWriterForACS = GetBufferedWriter(sslSocketForACS);
 
-            String messageForACS = "I got this code from an HTTPS server, is it a correct one : " + RetrieveAuthFromString(httpsClientData) + "\n";
-            bufferedWriterForACS.write(messageForACS);
-            bufferedWriterForACS.flush();
+            bufferedWriterForACS.write(httpsAuthenticationCode);
+            bufferedWriterForACS.newLine();
+            
             String ACSResponse = bufferedReaderForACS.readLine();
             System.out.println("Response from ACS server : " + ACSResponse);
 

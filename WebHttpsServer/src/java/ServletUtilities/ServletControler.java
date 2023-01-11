@@ -66,7 +66,7 @@ public class ServletControler extends HttpServlet {
         // IpServBillet = prop.getProperty("IP_SERV_BILLET");
         clientDBManagerBean = new ClientDBManagerBean();
         try {
-            clientDBManagerBean.initWithServiceName("localhost", "3306", "projetsecu2dbclients", "root", "oui123");
+            clientDBManagerBean.initWithServiceName("localhost", "3306", "projetsecu2dbclients", "root", "root");
         } catch (SQLException ex) {
             System.out.println("Erreur Connexion MySql : " + ex.getMessage() + " ** " + ex.getSQLState());
             return;
@@ -114,22 +114,32 @@ public class ServletControler extends HttpServlet {
             case "loseMoney":
                 SSLSocket sslsocket = GetFreshlyOpenedSSLSocket();
                 BufferedWriter bufferedwriter = GetBufferedWriter(sslsocket);
+                BufferedReader bufferedreader = GetBufferedReader(sslsocket);
                 
                 //NOTE A SECURISER POUR LES INJECTIONS ETC
                 String authCodeValue = request.getParameter("inputCode");
-                System.out.println(authCodeValue);
-
-                String message = "Here's the authentication code sent by the https server: " + authCodeValue;
-                bufferedwriter.write(message + '\n');
-                bufferedwriter.flush();
+                System.out.println("Received authentication code: " + authCodeValue);
+                System.out.println("Forwarding to ACQ.");
+                bufferedwriter.write(authCodeValue);
+                bufferedwriter.newLine();
                 
-                BufferedReader bufferedreader = GetBufferedReader(sslsocket);
-
-                System.out.println(bufferedreader.readLine());
-
+                System.out.println("Waiting for its response...");
+                String ACSIndirectResponse = bufferedreader.readLine();
+                switch(ACSIndirectResponse)
+                {
+                    case "ACK":
+                        session.setAttribute("infoMsg", "Paiement validé !");
+                        break;
+                        
+                    case "NACK":
+                        session.setAttribute("infoMsg", "Paiement refusé !");
+                        break;
+                }
+                
                 bufferedwriter.close();
                 bufferedreader.close();
                 sslsocket.close();
+                
                 ServletUtils.redirectStoreURL("/WebHttpsServer/JSPInit.jsp", request, response, session);
                 break;
 
@@ -252,11 +262,11 @@ public class ServletControler extends HttpServlet {
     }
 
     private SSLSocket GetFreshlyOpenedSSLSocket() throws IOException {
-        System.setProperty("javax.net.ssl.trustStore", "D:\\SSLCertificates\\Projet3DSecure\\HTTPSTrustStore.jks");
+        System.setProperty("javax.net.ssl.trustStore", "D:\\SSLCertificates\\RealProjet3DSecure\\WebHttpsServer.jks");
         System.setProperty("javax.net.ssl.trustStorePassword", "changeit");
 
         SSLSocketFactory sslsocketfactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
-        SSLSocket sslsocket = (SSLSocket) sslsocketfactory.createSocket("localhost", 9999);
+        SSLSocket sslsocket = (SSLSocket) sslsocketfactory.createSocket("localhost", 7777);
 
         return sslsocket;
     }

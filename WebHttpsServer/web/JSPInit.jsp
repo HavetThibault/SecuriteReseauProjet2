@@ -15,15 +15,21 @@
     <body>
         <TagTools:TagNavigationBar/>
         <div class="text-center">
-            <form class="m-2" method="POST" action="ServletControler"> 
-                <label for="name">Authentication code (6 characters):</label> <br />
-
-                <input type="text" id="inputCode" name="inputCode" size="10"> <br />
-                <button class="btn btn-secondary" type="submit" value="loseMoney" name="action">Lose some money</button>
-            </form>
-            <!--            <div class="col-6">
-                            <button type="submit"  class="btn btn-secondary" name="action" value="looseMoney">Loose some money</button>
-                        </div>-->
+            <div class="container-md col-3">
+                <form class="m-2" method="POST" action="ServletControler"> 
+                    <label for="inputPassword5" class="form-label m-2">Authentication code (6 characters):</label>
+                    <input type="password" name="inputCode" id="inputPassword5" class="form-control m-2">
+                    <button class="btn btn-secondary" type="submit" value="loseMoney" name="action">Lose some money</button>
+                </form>
+                <%
+                    if(session.getAttribute("infoMsg") != null)
+                    {
+                        out.write("<label class=\"m-2\">");
+                        out.write((String)session.getAttribute("infoMsg"));
+                        out.write("</label>");
+                    }
+                %>
+            </div>
         </div>
     </body>
 </html>
